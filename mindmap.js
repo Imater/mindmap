@@ -47,7 +47,7 @@ var API_4_MINDMAP = function(){  //singleton - при многократном �
 
 		 	 	 my_all_data = {}; //обнуляем данные
 	    		 db.values("mindmap_db",null,99999999).done(function(records) {
-	    		 	if(records.length && false) {
+	    		 	if(records.length) {
 	    		 	$.each(records, function(i, el){
 		    		 	my_all_data["n"+el.id] = {};
 		    		 	my_all_data["n"+el.id] = el;
