@@ -3,68 +3,51 @@ var API_4_MINDMAP = function(){  //singleton - при многократном �
 		 arguments.callee.instance = new function() {
 		     var this_api = this; //кэшируем самого себя, чтобы использовать внутри функций
 
-		     var my_all_data = {}; //главный массив с данными
-		      
-		     var my_all_data_template = { //задаём первоначальные данные, если это первый запуск
-				 "n1":{ id:1, parent_id:0, title:"Карта ума<br>своими руками<br>"+
-    			 "с хранением данных<br>в браузере.<br>Javascript" },
-    			 "n2":{ id:2, parent_id:1, title:"Изучим", icon:"icon-gift" },
-    			 "n3":{ id:3, parent_id:2, title:"Рисуем линии между элементами", icon:"icon-flow-line" }, 
-    			 "n5":{ id:5, parent_id:3, title:"Используем плагин jsPlumb", icon: "icon-link" }, 
-    			 "n4":{ id:4, parent_id:3, title:"Каждая линия - отдельный SVG" }, 
-    			 "n7":{ id:7, parent_id:6, title:"Используем плагин jQuery ContextMenu", icon: "icon-link" }, 
-    			 "n8":{ id:8, parent_id:1, title:"Объём кода", icon: "icon-lamp" }, 
-    			 "n9":{ id:9, parent_id:8, title:"Javascript + jQuery — 520 строк" },
-    			 "n10":{ id:10, parent_id:2, title:"Сохраненяем данные в браузере", icon: "icon-floppy-1" },
-    			 "n11":{ id:11, parent_id:17, title:"IndexedDB" },
-    			 "n12":{ id:12, parent_id:17, title:"webSQL" },
-    			 "n13":{ id:13, parent_id:17, title:"LocalStorage" },
-    			 "n14":{ id:14, parent_id:10, title:"Используем плагин Ydn.db", icon: "icon-link" },
-    			 "n15":{ id:15, parent_id:10, title:"Объём данных не ограничен" },
-    			 "n16":{ id:16, parent_id:2, title:"Используем синглтон в Javascript", icon: "icon-cd" },
-    			 "n17":{ id:17, parent_id:10, title:"Доступны" },
-    			 "n18":{ id:18, parent_id:6, title:"Динамическое добавление пунктов" },
-    			 "n20":{ id:20, parent_id:8, title:"CSS — 220 строк" },
-    			 "n19":{ id:19, parent_id:8, title:"HTML — 50 строк" },
-    			 "n22":{ id:22, parent_id:16, title:"Это позволяет избежать глобальных переменных" },
-    			 "n23":{ id:23, parent_id:16, title:"Наводим порядок среди функций" },
-    			 "n24":{ id:24, parent_id:2, title:"Используем иконочный шрифт", icon: "icon-emo-wink" },
-    			 "n6":{ id:6, parent_id:2, title:"Контекстное меню", icon: "icon-list" }, 
-    			 "n25":{ id:25, parent_id:24, title:"Используем набор шрифтов Fontello", icon: "icon-link" },
-    			 "n27":{ id:27, parent_id:2, title:"Drag&Drop jQuery UI", icon: "icon-link" },
-    			 "n26":{ id:26, parent_id:24, title:"Векторные иконки с идеальным сглаживанием" }
-    		   };
-		 	
+		     var my_all_data = ajax_get(); //главный массив с данными
+             
+             var my_all_data_template = ajax_get();
+		     
 		 	 this.jsSaveAllToDB = function() { //сохраняем весь массив в базу данных
-			 	 $.each(my_all_data, function(i, el){
-		       		db.put("mindmap_db", el ).done(function(){ 
-		       		});
-			 	 });
+                 ajax_send('save',my_all_data);
 		 	 }
 
 		 	 this.jsLoadAllFromDB = function() { //загружаем весь массив из базы данных браузера или из массива
 			 	 var d=new $.Deferred(); //объект позволяющий работать асинхронно
 
 		 	 	 my_all_data = {}; //обнуляем данные
-	    		 db.values("mindmap_db",null,99999999).done(function(records) {
-	    		 	if(records.length) {
-	    		 	$.each(records, function(i, el){
-		    		 	my_all_data["n"+el.id] = {};
-		    		 	my_all_data["n"+el.id] = el;
-	    		 	});
-	    		 	} else { //если это первый запуск, заполняю данные по шаблону и сохраняю в базе данных
-		    		 	my_all_data = my_all_data_template;
-		    		 	this_api.jsSaveAllToDB();
-	    		 	}
-	    		 	d.resolve(); //выполняем обещание, при этом выполнится функция done
-	    		 });
+	    		 //Добавляеем запрос на чтение данных
+                     
+                    
+                    $.ajax({
+                      type: 'POST',
+                      url: 'db.php?method=getData',
+                      data: '',
+                        async: false,
+                      success: function(data){
+                        //console.log( data );
+                          if(data !== 'null'){
+                          records = JSON.parse(data);
+                              console.log('records');
+                              console.log(records);
+                           if(records) {
+                            $.each(records, function(i, el){
+                            
+                                my_all_data["n"+el.id] = {};
+                                my_all_data["n"+el.id] = el;
+                            });
+                               console.log('my_all_data');
+                               console.log(my_all_data);
+                            } 
+                          }
+                            d.resolve(); //выполняем обещание, при этом выполнится функция done
+                      }
+                    });
 	    		 
 	    		 return d.promise(); //говорим, что скоро выполним обещание, когда всё загрузится
 
 		 	 }
 		 	
 		 	 this.jsFind = function(id, changes) { //возвращаем элемент с id или меняем его параметры
-		 	 	
 		 	 	 //находим элемент в массиве объектов, буква n нужна для отработки отрицательных id
 		 	 	 var answer = my_all_data["n"+id]; 
 		 	 	 if(!answer) return false; //если элемента в массиве нет
@@ -73,11 +56,12 @@ var API_4_MINDMAP = function(){  //singleton - при многократном �
 			 	 	 $.each(changes, function(name_field, new_field_value){
 				 	 	 answer[name_field] = new_field_value;
 			 	 	 });
-		       		 
-		       		 db.put("mindmap_db", answer ).done(function(){ //асинхронно сохраняем данные в базе браузера
-		       		 	console.info("Изменения сохранены в базу данных браузера"); //выводим в консоль браузера
-		       		 });
-			 	 	 
+                     
+                     //отправляем данные в переменную
+                     
+                     ajax_send('save',my_all_data);
+                     
+		       		 	console.info("Изменения сохранены в базу данных браузера"); //выводим в консоль браузера		       		 			 	 	 
 		 	 	 }
 			 	 return answer;
 		 	 }
@@ -519,4 +503,32 @@ function jsDoFirst() {
 	 	onResize(); //перерисовываем линии
 	}); //загружаем весь массив из базы данных браузера
 	
+}
+function ajax_send(method,data_send) {
+    console.log(method);
+    console.log(data_send);
+    //data_send = $.toJSON(data_send);
+    data_send = JSON.stringify(data_send);
+    console.log(data_send);
+    $.ajax({
+      type: 'POST',
+      url: 'db.php?method=save',
+      data: 'data='+ data_send,
+      success: function(data){
+        return data;
+      }
+    });
+}
+function ajax_get () {
+    $.ajax({
+                      type: 'POST',
+                      url: 'db.php?method=getData',
+                      data: '',
+                    async: false,
+                      success: function(data){
+                        records = JSON.parse(data);
+                          console.log(records);
+                       return records;
+                      }
+                    });
 }
