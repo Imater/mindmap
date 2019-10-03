@@ -21,7 +21,7 @@ switch($_REQUEST['method']){
         break;
     case 'getData':
         //получаем данные
-        if(file_exists(db_content.php)) {
+        if(file_exists('db_content.php')) {
             require_once'db_content.php';
         }
         if(empty($db)){
